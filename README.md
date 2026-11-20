@@ -33,7 +33,7 @@ python3 -m unittest discover -s tests -t .   # run tests
 core/         vendor-neutral engine: normalize, match, drift (infer, remediate: planned)
 data/         synthetic estate generator with injected ground truth
 eval/         metrics against ground truth
-adapters/     connectors to specific platforms (servicenow, netbox: planned)
+adapters/     connectors to specific platforms (servicenow: built, untested on a real instance; netbox: planned)
 servicenow-app/  scoped app for proposals and approvals (planned)
 docs/         architecture and roadmap
 ```
@@ -90,7 +90,9 @@ measuring that is future work.
 - [ ] Change history and time-to-detect for drift
 - [ ] Learned (non-rule) drift and anomaly detection on noisier policies
 - [ ] Policy-governed remediation planner (propose only, human approval)
-- [ ] ServiceNow adapter and benchmark against native tooling
+- [x] ServiceNow adapter (load, export, evaluate, cleanup), tested against a simulation only
+- [ ] Run the adapter on a real instance and fix the mapping
+- [ ] Benchmark against the platform's native duplicate tooling
 - [ ] Second platform adapter (NetBox or iTop)
 
 ## Independence
