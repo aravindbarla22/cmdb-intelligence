@@ -176,8 +176,38 @@ def generate(seed=42, n_apps=100, n_servers=60, dup_rate=0.15,
             srv["attrs"][field] = new
             truth["drift"].append({"ci_id": srv["id"], "field": field, "baseline": old, "current": new})
 
+    # 5. Policy and approved changes. Drift means a deviation from the baseline
+    #    that the policy does NOT permit. In hard mode, agent upgrades to an
+    #    approved version are allowed, so a detector that flags every difference
+    #    produces false positives. Uses its own random stream so the duplicate
+    #    results above do not change.
+    policy = {"approved_value_changes": {}}
+    truth["benign_changes"] = []
+    if hard:
+        approved = ["1.5.0", "1.5.1"]
+        policy["approved_value_changes"] = {"agent_version": approved}
+        kept = []
+        for d in truth["drift"]:
+            if d["field"] == "agent_version" and d["current"] in approved:
+                truth["benign_changes"].append(d)
+            else:
+                kept.append(d)
+        truth["drift"] = kept
+        touched = {d["ci_id"] for d in truth["drift"] + truth["benign_changes"]}
+        rng2 = random.Random(f"{seed}-benign")
+        pool = [s for s in servers if s["id"] not in touched]
+        for srv in rng2.sample(pool, k=int(n_servers * 0.15)):
+            old = srv["attrs"]["agent_version"]
+            options = [v for v in approved if v != old]
+            if options:
+                new = rng2.choice(options)
+                srv["attrs"]["agent_version"] = new
+                truth["benign_changes"].append(
+                    {"ci_id": srv["id"], "field": "agent_version", "baseline": old, "current": new})
+
     rng.shuffle(cis)
-    return {"cis": cis, "relationships": rels, "baseline": baseline, "ground_truth": truth}
+    return {"cis": cis, "relationships": rels, "baseline": baseline,
+            "policy": policy, "ground_truth": truth}
 
 
 def write(estate, outdir):
